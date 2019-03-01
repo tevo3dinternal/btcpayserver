@@ -1,6 +1,6 @@
 /*!
  * Start Bootstrap - Creative v4.0.0-beta (http://startbootstrap.com/template-overviews/creative)
- * Copyright 2013-2017 Start Bootstrap
+ * Copyright 2013-2017 Start Bootstrap - modified by TEVO 3D printers 2019
  * Licensed under MIT (https://github.com/BlackrockDigital/startbootstrap-creative/blob/master/LICENSE)
  */
 body,
@@ -73,7 +73,7 @@ body {
 
 #mainNav {
     border-color: rgba(34, 34, 34, 0.05);
-    background-color: #0F3723;
+    background-color: #353535;
     font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
     -webkit-transition: all 0.2s;
     -moz-transition: all 0.2s;
@@ -83,12 +83,12 @@ body {
     #mainNav .navbar-brand {
         font-weight: 700;
         text-transform: uppercase;
-        color: #0F3B21;
+        color: #000000;
         font-family: 'Open Sans', 'Helvetica Neue', Arial, sans-serif;
     }
 
         #mainNav .navbar-brand:focus, #mainNav .navbar-brand:hover {
-            color: #0F3B21;
+            color: #000000;
         }
 
     #mainNav .navbar-toggle {
@@ -148,16 +148,16 @@ body {
 
         #mainNav.navbar-shrink {
             border-color: rgba(34, 34, 34, 0.05);
-            background-color: #0F3723;
+            background-color: #353535;
         }
 
             #mainNav.navbar-shrink .navbar-brand {
                 font-size: 16px;
-                color: #0F3B21;
+                color: #000000;
             }
 
                 #mainNav.navbar-shrink .navbar-brand:focus, #mainNav.navbar-shrink .navbar-brand:hover {
-                    color: #0F3B21;
+                    color: #000000;
                 }
 
             #mainNav.navbar-shrink .navbar-nav > li.nav-item > a.nav-link,
