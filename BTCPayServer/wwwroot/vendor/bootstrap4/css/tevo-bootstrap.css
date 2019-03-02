@@ -2658,8 +2658,8 @@ fieldset:disabled a.btn {
 
 .btn-dark {
   color: #fff;
-  background-color: #0f3b21;
-  border-color: #0f3b21;
+  background-color: #000000;
+  border-color: #000000;
 }
 
 .btn-dark:hover {
@@ -2674,8 +2674,8 @@ fieldset:disabled a.btn {
 
 .btn-dark.disabled, .btn-dark:disabled {
   color: #fff;
-  background-color: #0f3b21;
-  border-color: #0f3b21;
+  background-color: #000000;
+  border-color: #000000;
 }
 
 .btn-dark:not(:disabled):not(.disabled):active, .btn-dark:not(:disabled):not(.disabled).active,
@@ -2915,14 +2915,14 @@ fieldset:disabled a.btn {
 }
 
 .btn-outline-dark {
-  color: #0f3b21;
-  border-color: #0f3b21;
+  color: #000000;
+  border-color: #000000;
 }
 
 .btn-outline-dark:hover {
   color: #fff;
-  background-color: #0f3b21;
-  border-color: #0f3b21;
+  background-color: #000000;
+  border-color: #000000;
 }
 
 .btn-outline-dark:focus, .btn-outline-dark.focus {
@@ -2930,15 +2930,15 @@ fieldset:disabled a.btn {
 }
 
 .btn-outline-dark.disabled, .btn-outline-dark:disabled {
-  color: #0f3b21;
+  color: #000000;
   background-color: transparent;
 }
 
 .btn-outline-dark:not(:disabled):not(.disabled):active, .btn-outline-dark:not(:disabled):not(.disabled).active,
 .show > .btn-outline-dark.dropdown-toggle {
   color: #fff;
-  background-color: #0f3b21;
-  border-color: #0f3b21;
+  background-color: #000000;
+  border-color: #000000;
 }
 
 .btn-outline-dark:not(:disabled):not(.disabled):active:focus, .btn-outline-dark:not(:disabled):not(.disabled).active:focus,
@@ -5076,7 +5076,7 @@ a.badge-light:hover, a.badge-light:focus {
 
 .badge-dark {
   color: #fff;
-  background-color: #0f3b21;
+  background-color: #000000;
 }
 
 a.badge-dark:hover, a.badge-dark:focus {
@@ -6452,7 +6452,7 @@ button.bg-light:focus {
 }
 
 .bg-dark {
-  background-color: #0f3b21 !important;
+  background-color: #000000 !important;
 }
 
 a.bg-dark:hover, a.bg-dark:focus,
@@ -6538,7 +6538,7 @@ button.bg-dark:focus {
 }
 
 .border-dark {
-  border-color: #0f3b21 !important;
+  border-color: #000000 !important;
 }
 
 .border-white {
@@ -9759,7 +9759,7 @@ a.text-light:hover, a.text-light:focus {
 }
 
 .text-dark {
-  color: #0f3b21 !important;
+  color: #000000 !important;
 }
 
 a.text-dark:hover, a.text-dark:focus {
