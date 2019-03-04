@@ -17,7 +17,6 @@ using Microsoft.AspNetCore.Mvc.Infrastructure;
 using BTCPayServer.Services;
 using BTCPayServer.Models;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.HttpOverrides;
 using BTCPayServer.Data;
 using Microsoft.Extensions.Logging;
 using BTCPayServer.Logging;
@@ -159,10 +158,6 @@ namespace BTCPayServer.Hosting
             {
                 app.UseDeveloperExceptionPage();
             }
-            app.UseForwardedHeaders(new ForwardedHeadersOptions()
-            {
-                ForwardedHeaders = ForwardedHeaders.All
-            });
             app.UseCors();
             app.UsePayServer();
             app.UseStaticFiles();
