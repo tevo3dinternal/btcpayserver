@@ -10,6 +10,7 @@ namespace BTCPayServer.Models.AppViewModels
 {
     public class ViewCrowdfundViewModel
     {
+        public string HubPath { get; set; }
         public string StatusMessage{ get; set; }
         public string StoreId { get; set; }
         public string AppId { get; set; }
@@ -32,6 +33,8 @@ namespace BTCPayServer.Models.AppViewModels
         public bool SoundsEnabled { get; set; }
         public string DisqusShortname { get; set; }
         public bool AnimationsEnabled { get; set; }
+        public string[] AnimationColors { get; set; }
+        public string[] Sounds { get; set; }
         public int ResetEveryAmount { get; set; }
         public bool NeverReset { get; set; }
 

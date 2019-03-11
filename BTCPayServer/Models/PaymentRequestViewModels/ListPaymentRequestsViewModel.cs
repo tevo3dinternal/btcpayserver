@@ -48,7 +48,7 @@ namespace BTCPayServer.Models.PaymentRequestViewModels
 
         public string Id { get; set; }
         [Required] public string StoreId { get; set; }
-        [Required] public decimal Amount { get; set; }
+        [Required][Range(0, double.PositiveInfinity)]public decimal Amount { get; set; }
 
         [Display(Name = "The currency used for payment request. (e.g. BTC, LTC, USD, etc.)")]
         public string Currency { get; set; }
@@ -134,6 +134,7 @@ namespace BTCPayServer.Models.PaymentRequestViewModels
         public string AmountCollectedFormatted { get; set; }
         public string AmountFormatted { get; set; }
         public bool AnyPendingInvoice { get; set; }
+        public string HubPath { get; set; }
 
         public class PaymentRequestInvoice
         {
