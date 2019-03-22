@@ -55,6 +55,8 @@ using BTCPayServer.Events;
 using BTCPayServer.Configuration;
 using System.Security;
 using System.Runtime.CompilerServices;
+using System.Net;
+using BTCPayServer.Tor;
 
 namespace BTCPayServer.Tests
 {
@@ -144,6 +146,67 @@ namespace BTCPayServer.Tests
             var paymentMethod = InvoiceWatcher.GetNearestClearedPayment(paymentMethods, out var accounting2, null);
             Assert.Equal(btc.CryptoCode, paymentMethod.CryptoCode);
 #pragma warning restore CS0618
+        }
+
+
+        [Fact]
+        [Trait("Fast", "Fast")]
+        public void CanParseEndpoint()
+        {
+            Assert.False(EndPointParser.TryParse("126.2.2.2", out var endpoint));
+            Assert.True(EndPointParser.TryParse("126.2.2.2:20", out endpoint));
+            var ipEndpoint = Assert.IsType<IPEndPoint>(endpoint);
+            Assert.Equal("126.2.2.2", ipEndpoint.Address.ToString());
+            Assert.Equal(20, ipEndpoint.Port);
+            Assert.True(EndPointParser.TryParse("toto.com:20", out endpoint));
+            var dnsEndpoint = Assert.IsType<DnsEndPoint>(endpoint);
+            Assert.IsNotType<OnionEndpoint>(endpoint);
+            Assert.Equal("toto.com", dnsEndpoint.Host.ToString());
+            Assert.Equal(20, dnsEndpoint.Port);
+            Assert.False(EndPointParser.TryParse("toto invalid hostname:2029", out endpoint));
+            Assert.True(EndPointParser.TryParse("toto.onion:20", out endpoint));
+            var onionEndpoint = Assert.IsType<OnionEndpoint>(endpoint);
+            Assert.Equal("toto.onion", onionEndpoint.Host.ToString());
+            Assert.Equal(20, onionEndpoint.Port);
+        }
+
+        [Fact]
+        [Trait("Fast", "Fast")]
+        public void CanParseTorrc()
+        {
+            var nl = "\n";
+            var input = "# For the hidden service BTCPayServer" + nl +
+                        "HiddenServiceDir /var/lib/tor/hidden_services/BTCPayServer" + nl +
+                        "# Redirecting to nginx" + nl +
+                        "HiddenServicePort 80 172.19.0.10:81";
+            nl = Environment.NewLine;
+            var expected = "HiddenServiceDir /var/lib/tor/hidden_services/BTCPayServer" + nl +
+                           "HiddenServicePort 80 172.19.0.10:81" + nl;
+            Assert.True(Torrc.TryParse(input, out var torrc));
+            Assert.Equal(expected, torrc.ToString());
+            nl = "\r\n";
+            input = "# For the hidden service BTCPayServer" + nl +
+                        "HiddenServiceDir /var/lib/tor/hidden_services/BTCPayServer" + nl +
+                        "# Redirecting to nginx" + nl +
+                        "HiddenServicePort 80 172.19.0.10:81";
+
+            Assert.True(Torrc.TryParse(input, out torrc));
+            Assert.Equal(expected, torrc.ToString());
+
+            input = "# For the hidden service BTCPayServer" + nl +
+                        "HiddenServiceDir /var/lib/tor/hidden_services/BTCPayServer" + nl +
+                        "# Redirecting to nginx" + nl +
+                        "HiddenServicePort 80 172.19.0.10:80" + nl +
+                        "HiddenServiceDir /var/lib/tor/hidden_services/Woocommerce" + nl +
+                        "# Redirecting to nginx" + nl +
+                        "HiddenServicePort 80 172.19.0.11:80";
+            nl = Environment.NewLine;
+            expected = "HiddenServiceDir /var/lib/tor/hidden_services/BTCPayServer" + nl +
+                           "HiddenServicePort 80 172.19.0.10:80" + nl +
+                           "HiddenServiceDir /var/lib/tor/hidden_services/Woocommerce" + nl +
+                           "HiddenServicePort 80 172.19.0.11:80" + nl;
+            Assert.True(Torrc.TryParse(input, out torrc));
+            Assert.Equal(expected, torrc.ToString());
         }
 
         [Fact]
@@ -727,6 +790,18 @@ namespace BTCPayServer.Tests
 
                 var GetRatesResult = JObject.Parse(((JsonResult)rateController.GetRates(null, acc.StoreId, default)
                     .GetAwaiter().GetResult()).Value.ToJson()).ToObject<DataWrapper<Rate[]>>();
+                // We don't have any default currencies, so this should be failing
+                Assert.Null(GetRatesResult?.Data);
+
+                var store = acc.GetController<StoresController>();
+                var ratesVM = (RatesViewModel)(Assert.IsType<ViewResult>(store.Rates(acc.StoreId)).Model);
+                ratesVM.DefaultCurrencyPairs = "BTC_USD,LTC_USD";
+                store.Rates(ratesVM).Wait();
+                store = acc.GetController<StoresController>();
+                rateController = acc.GetController<RateController>();
+                GetRatesResult = JObject.Parse(((JsonResult)rateController.GetRates(null, acc.StoreId, default)
+                    .GetAwaiter().GetResult()).Value.ToJson()).ToObject<DataWrapper<Rate[]>>();
+                // Now we should have a result
                 Assert.NotNull(GetRatesResult);
                 Assert.NotNull(GetRatesResult.Data);
                 Assert.Equal(2, GetRatesResult.Data.Length);
@@ -869,7 +944,7 @@ namespace BTCPayServer.Tests
             using (var tester = ServerTester.Create())
             {
                 tester.Start();
-                foreach(var req in new[] 
+                foreach (var req in new[]
                 {
                     "invoices/",
                     "invoices",
@@ -1006,7 +1081,7 @@ namespace BTCPayServer.Tests
         private static decimal CreateInvoice(ServerTester tester, TestAccount user, string exchange, string currency = "USD")
         {
             var storeController = user.GetController<StoresController>();
-            var vm = (RatesViewModel)((ViewResult)storeController.Rates()).Model;
+            var vm = (RatesViewModel)((ViewResult)storeController.Rates(user.StoreId)).Model;
             vm.PreferredExchange = exchange;
             storeController.Rates(vm).Wait();
             var invoice2 = user.BitPay.CreateInvoice(new Invoice()
@@ -1044,7 +1119,7 @@ namespace BTCPayServer.Tests
                 Assert.Equal(Money.Coins(1.0m), invoice1.BtcPrice);
 
                 var storeController = user.GetController<StoresController>();
-                var vm = (RatesViewModel)((ViewResult)storeController.Rates()).Model;
+                var vm = (RatesViewModel)((ViewResult)storeController.Rates(user.StoreId)).Model;
                 Assert.Equal(0.0, vm.Spread);
                 vm.Spread = 40;
                 storeController.Rates(vm).Wait();
@@ -1143,7 +1218,7 @@ namespace BTCPayServer.Tests
                 user.RegisterDerivationScheme("BTC");
 
                 var store = user.GetController<StoresController>();
-                var rateVm = Assert.IsType<RatesViewModel>(Assert.IsType<ViewResult>(store.Rates()).Model);
+                var rateVm = Assert.IsType<RatesViewModel>(Assert.IsType<ViewResult>(store.Rates(user.StoreId)).Model);
                 Assert.False(rateVm.ShowScripting);
                 Assert.Equal("coinaverage", rateVm.PreferredExchange);
                 Assert.Equal(0.0, rateVm.Spread);
@@ -1151,7 +1226,7 @@ namespace BTCPayServer.Tests
 
                 rateVm.PreferredExchange = "bitflyer";
                 Assert.IsType<RedirectToActionResult>(store.Rates(rateVm, "Save").Result);
-                rateVm = Assert.IsType<RatesViewModel>(Assert.IsType<ViewResult>(store.Rates()).Model);
+                rateVm = Assert.IsType<RatesViewModel>(Assert.IsType<ViewResult>(store.Rates(user.StoreId)).Model);
                 Assert.Equal("bitflyer", rateVm.PreferredExchange);
 
                 rateVm.ScriptTest = "BTC_JPY,BTC_CAD";
@@ -1168,7 +1243,8 @@ namespace BTCPayServer.Tests
                 Assert.IsType<RedirectToActionResult>(store.ShowRateRulesPost(true).Result);
                 Assert.IsType<RedirectToActionResult>(store.Rates(rateVm, "Save").Result);
                 store = user.GetController<StoresController>();
-                rateVm = Assert.IsType<RatesViewModel>(Assert.IsType<ViewResult>(store.Rates()).Model);
+                rateVm = Assert.IsType<RatesViewModel>(Assert.IsType<ViewResult>(store.Rates(user.StoreId)).Model);
+                Assert.Equal(rateVm.StoreId, user.StoreId);
                 Assert.Equal(rateVm.DefaultScript, rateVm.Script);
                 Assert.True(rateVm.ShowScripting);
                 rateVm.ScriptTest = "BTC_JPY";
@@ -1185,7 +1261,7 @@ namespace BTCPayServer.Tests
                 Assert.True(rateVm.TestRateRules.All(t => !t.Error));
                 Assert.IsType<RedirectToActionResult>(store.Rates(rateVm, "Save").Result);
                 store = user.GetController<StoresController>();
-                rateVm = Assert.IsType<RatesViewModel>(Assert.IsType<ViewResult>(store.Rates()).Model);
+                rateVm = Assert.IsType<RatesViewModel>(Assert.IsType<ViewResult>(store.Rates(user.StoreId)).Model);
                 Assert.Equal(50, rateVm.Spread);
                 Assert.True(rateVm.ShowScripting);
                 Assert.Contains("DOGE_X", rateVm.Script, StringComparison.OrdinalIgnoreCase);
@@ -2251,15 +2327,22 @@ donation:
                 Assert.NotNull(exchangeRates);
                 Assert.NotEmpty(exchangeRates);
                 Assert.NotEmpty(exchangeRates.ByExchange[result.ExpectedName]);
-
-                // This check if the currency pair is using right currency pair
-                Assert.Contains(exchangeRates.ByExchange[result.ExpectedName],
+                if (result.ExpectedName == "bitbank")
+                {
+                    Assert.Contains(exchangeRates.ByExchange[result.ExpectedName],
+                        e => e.CurrencyPair == new CurrencyPair("BTC", "JPY") && e.BidAsk.Bid > 100m); // 1BTC will always be more than 100JPY
+                }
+                else
+                {
+                    // This check if the currency pair is using right currency pair
+                    Assert.Contains(exchangeRates.ByExchange[result.ExpectedName],
                         e => (e.CurrencyPair == new CurrencyPair("BTC", "USD") ||
                                e.CurrencyPair == new CurrencyPair("BTC", "EUR") ||
                                e.CurrencyPair == new CurrencyPair("BTC", "USDT") ||
                                e.CurrencyPair == new CurrencyPair("BTC", "CAD"))
                                && e.BidAsk.Bid > 1.0m // 1BTC will always be more than 1USD
                                );
+                }
             }
             // Kraken emit one request only after first GetRates
             factory.Providers["kraken"].GetRatesAsync(default).GetAwaiter().GetResult();
@@ -2352,7 +2435,7 @@ donation:
             Assert.True(ExternalConnectionString.TryParse("server=https://tow/test", out connStr, out error));
             expanded = await connStr.Expand(new Uri("https://toto.com"), ExternalServiceTypes.Charge);
             Assert.Equal(new Uri("https://tow/test"), expanded.Server);
-            
+
             // Error if directory not exists
             Assert.True(ExternalConnectionString.TryParse($"server={unusedUri};macaroondirectorypath=pouet", out connStr, out error));
             await Assert.ThrowsAsync<DirectoryNotFoundException>(() => connStr.Expand(unusedUri, ExternalServiceTypes.LNDGRPC));

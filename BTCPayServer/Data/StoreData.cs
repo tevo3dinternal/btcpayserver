@@ -307,6 +307,25 @@ namespace BTCPayServer.Data
 
         public bool RequiresRefundEmail { get; set; }
 
+        CurrencyPair[] _DefaultCurrencyPairs;
+        [JsonProperty("defaultCurrencyPairs", ItemConverterType = typeof(CurrencyPairJsonConverter))]
+        public CurrencyPair[] DefaultCurrencyPairs
+        {
+            get
+            {
+                return _DefaultCurrencyPairs ?? Array.Empty<CurrencyPair>();
+            }
+            set
+            {
+                _DefaultCurrencyPairs = value;
+            }
+        }
+
+        public string GetDefaultCurrencyPairString()
+        {
+            return string.Join(',', DefaultCurrencyPairs.Select(c => c.ToString()));
+        }
+
         public string DefaultLang { get; set; }
         [DefaultValue(60)]
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Populate)]
@@ -331,9 +350,10 @@ namespace BTCPayServer.Data
         public string PreferredExchange { get; set; }
 
         [JsonConverter(typeof(CurrencyValueJsonConverter))]
-        public CurrencyValue LightningMaxValue { get; set; }
-        [JsonConverter(typeof(CurrencyValueJsonConverter))]
         public CurrencyValue OnChainMinValue { get; set; }
+        [JsonConverter(typeof(CurrencyValueJsonConverter))]
+        public CurrencyValue LightningMaxValue { get; set; }
+        public bool LightningAmountInSatoshi { get; set; }
 
         [JsonConverter(typeof(UriJsonConverter))]
         public Uri CustomLogo { get; set; }
